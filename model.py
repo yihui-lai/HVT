@@ -228,11 +228,11 @@ def WprimeTot():
     return Wprimeeve()+Wprimemvm()+Wprimetauvt()+Wprimeud()+Wprimeus()+Wprimecd()+Wprimecs()+Wprimetb()+WprimeHW()+WprimeVzW()+WprimeWZ()+WprimeAW()
 
 
-def gH():
-    return gv*ch
+# def gH():
+#     return gv*ch
 
-def gF():
-    return g_su2*g_su2*cq/gv # cl = cq
+# def gF():
+#     return g_su2*g_su2*cq/gv # cl = cq
 
 def get_ch(gH, gv=3):
     return gH/gv

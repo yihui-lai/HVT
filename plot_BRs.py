@@ -37,6 +37,8 @@ def do_calculations(mass,gv,ch,cq,Vprime):
     HVT.cl = HVT.cq
     HVT.c3 = HVT.cq
     HVT.gst = HVT.gv
+    if abs(ch)==0 and abs(cq)==0:
+        return None
     print(f'Calculating BR for mass: {mass} gv: {gv} cq: {cq} ch: {ch}')
     if Vprime=='Z':
         tot = HVT.ZprimeTot().real
@@ -80,10 +82,10 @@ modes = {
     'GammaTot': '#Gamma',
     'BRhZ': 'ZH',
     'BRWW': 'WW',
-    'BRll': 'l#bar{l}',
-    'BRnunu': '#nu#bar{#nu}',
-    'BRjets': 'q#bar{q}',
-    'BRtt': 't#bar{t}',
+    'BRll': 'll',
+    'BRnunu': '#nu#nu',
+    'BRjets': 'qq',
+    'BRtt': 'tt',
     }
 
 
@@ -92,8 +94,8 @@ modes = {
     'GammaTot': '#Gamma',
     'BRWH': 'WH',
     'BRWZ': 'WZ',
-    'BRlnu': 'l#bar{#nu}',
-    'BRjets': 'q#bar{q}',
+    'BRlnu': 'l#nu',
+    'BRjets': 'qq',
     }
 
 csv_file = f'BRs_{Vprime}prime.csv'
@@ -102,17 +104,27 @@ df = pd.read_csv(csv_file)
 
 df_list = []
 m_values = [1000, 2000, 3000, 4000]
-gv_values = [1, 3]
+# gv_values = [1, 3]
+gv_values = [1]
 gF_values = np.arange(-1.6, 1.7, 0.2)
 gH_values = np.arange(-7.5, 7.6, 0.25)
 
-# m_values = [1000]
-# gv_values = [3]
-# gF_values = np.arange(0, 1.7, 0.8)
-# gH_values = np.arange(-7.5, 7.6, 1)
+# parser = argparse.ArgumentParser()
+# parser.add_argument("--mass", dest="mass", type=int)
+# parser.add_argument("--gv", dest="gv", type=int)
+# parser.add_argument("--gf", dest="gf", type=float)
+
+# args = parser.parse_args()
+# m_values = [args.mass]
+# gv_values = [args.gv]
+# gF_values = [args.gf]
+
+# csv_file = f'BRs_{Vprime}prime_M{m_values[0]}_gv{gv_values[0]}_gf{gF_values[0]}.csv'
 
 gF_values = [round(x,3) for x in gF_values]
 gH_values = [round(x,3) for x in gH_values]
+gF_values = [x if abs(x)!=0 else 0.0 for x in gF_values]
+gH_values = [x if abs(x)!=0 else 0.0 for x in gH_values]
 
 print(gF_values)
 print(gH_values)
@@ -217,4 +229,4 @@ for mode, name in modes.items():
                 if pos:
                     leg.AddEntry(graph, 'g_{F}='+str(abs(gF)), 'l')
             leg.AddEntry(ref_graph, 'g_{F}<0', 'l')
-            canv.SaveAs(cname+'.pdf')
+            canv.SaveAs(f'pdfs/{cname}.pdf')

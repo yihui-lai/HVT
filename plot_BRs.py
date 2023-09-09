@@ -54,7 +54,7 @@ def createCanvas(cname, isBR, decayName, Vprime, mass, nEntries, nEntries2, y_mi
     if isBR:
         canv = tdrCanvas(cname, -3.5, 3.5, y_min, 2, "g_{H} #times sign(g_{F})", f"BR({Vprime}'#rightarrow {decayName})", square=True, iPos =0)
     else:
-        canv = tdrCanvas(cname, -3.5, 3.5, 1*1e-1, 1e4, "g_{H} #times sign(g_{F})", f"{decayName}({Vprime}'#rightarrow 2X) [GeV]", square=True, iPos =0)
+        canv = tdrCanvas(cname, -3.5, 3.5, 1*1e-3, 1e4, "g_{H} #times sign(g_{F})", f"{decayName}({Vprime}'#rightarrow 2X) [GeV]", square=True, iPos =0)
     canv.SetLogy(True)
     leg = tdrLeg(0.63,0.18,0.95,0.18+(2+nEntries)*0.05)
     if nEntries>5:

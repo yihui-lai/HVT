@@ -1,9 +1,10 @@
-import math, json, argparse
-import numpy as np
-import pandas as pd
+#!/usr/bin/env python3
+
+import os, math
+import ROOT as rt
+from collections import OrderedDict
 from array import array
-from model import *
-import model as HVT
+from utils import decay_modes, get_masses, get_gVs, get_gFs, get_gHs, benchmarks
 
 from tdrstyle import *
 import tdrstyle as TDR
@@ -13,220 +14,211 @@ rt.gStyle.SetOptStat(0)
 rt.gStyle.SetOptFit(0)
 
 TDR.cmsTextSize = 0.6
-TDR.cmsTextFont = 52
-TDR.cmsText='Private work'
+TDR.cmsTextFont = 42
+# TDR.cmsText='Private work'
+TDR.cmsText='HVT model'
 TDR.extraText=''
 TDR.extraText2=''
 TDR.cms_energy = ""
 TDR.cms_lumi = ""
 
-def filterCondition(data, infos):
-    condition = None
-    for key, value in infos.items():
-        if condition is None:
-            condition = data[key] == value
-        else:
-            condition &= data[key] == value
-    return condition
+colors = {
+    0.0: rt.kRed+1,
+    0.2: rt.kOrange+1,
+    0.4: rt.kOrange-2,
+    0.6: rt.kGreen+1,
+    0.8: rt.kGreen+2,
+    1.0: rt.kAzure+7,
+    1.2: rt.kAzure+2,
+    1.4: rt.kViolet+7,
+    1.6: 880,
 
-def do_calculations(mass,gv,ch,cq,Vprime):
-    HVT.MVz = mass
-    HVT.gv = gv
-    HVT.ch = ch
-    HVT.cq = cq
-    HVT.cl = HVT.cq
-    HVT.c3 = HVT.cq
-    HVT.gst = HVT.gv
-    if abs(ch)==0 and abs(cq)==0:
-        return None
-    print(f'Calculating BR for mass: {mass} gv: {gv} cq: {cq} ch: {ch}')
-    if Vprime=='Z':
-        tot = HVT.ZprimeTot().real
-    if Vprime=='W':
-        tot = HVT.WprimeTot().real
-    if tot == 0:
-        return None
-    if Vprime=='Z':
-        entry = {
-            'M0': mass,
-            'g': HVT.g_su2,
-            'gv': gv,
-            'ch': ch,
-            'cl': cq,
-            'GammaTot':tot,
-            'BRWW': HVT.ZprimeWW().real/tot,
-            'BRhZ': HVT.ZprimeZH().real/tot,
-            'BRll': (HVT.Zprimeee()+HVT.Zprimemm()).real/tot,
-            'BRnunu': HVT.Zprimevv().real/tot,
-            'BRtt': HVT.Zprimett().real/tot,
-            'BRjets': (HVT.Zprimeuu()+HVT.Zprimedd()+HVT.Zprimecc()+HVT.Zprimess()+HVT.Zprimebb()+HVT.Zprimett()).real/tot,
-            }
-    if Vprime=='W':
-        entry = {
-            'M0': mass,
-            'g': HVT.g_su2,
-            'gv': gv,
-            'ch': ch,
-            'cl': cq,
-            'GammaTot':tot,
-            'BRWH': HVT.WprimeHW().real/tot,
-            'BRWZ': HVT.WprimeWZ().real/tot,
-            'BRlnu': (HVT.Wprimeeve()+HVT.Wprimemvm()).real/tot,
-            'BRjets': (HVT.Wprimeud()+HVT.Wprimeus()+HVT.Wprimecd()+HVT.Wprimecs()+HVT.Wprimetb()).real/tot,
-            }
+    'BRll': rt.kRed+1,
+    'BRnunu': rt.kOrange+1,
+    'BRjets': rt.kGreen+2,
+    'BRhZ': rt.kAzure+2,
+    'BRWW': rt.kMagenta+1,
 
-    return entry
-
-Vprime = 'Z'
-modes = {
-    'GammaTot': '#Gamma',
-    'BRhZ': 'ZH',
-    'BRWW': 'WW',
-    'BRll': 'll',
-    'BRnunu': '#nu#nu',
-    'BRjets': 'qq',
-    'BRtt': 'tt',
+    'BRWH': rt.kAzure+2,
+    'BRWZ': rt.kMagenta+1,
+    'BRlnu': rt.kRed+1,
+    # rt.kPink
+    # rt.kAzure+10,
+    # rt.kBlue+1,
+    # rt.kGray,
+    # rt.kGreen+1, rt.kGreen,
     }
 
-
-Vprime = 'W'
-modes = {
-    'GammaTot': '#Gamma',
-    'BRWH': 'WH',
-    'BRWZ': 'WZ',
-    'BRlnu': 'l#nu',
-    'BRjets': 'qq',
-    }
-
-csv_file = f'BRs_{Vprime}prime.csv'
-df = pd.read_csv(csv_file)
-
-
-df_list = []
-m_values = [1000, 2000, 3000, 4000]
-# gv_values = [1, 3]
-gv_values = [1]
-gF_values = np.arange(-1.6, 1.7, 0.2)
-gH_values = np.arange(-7.5, 7.6, 0.25)
-
-# parser = argparse.ArgumentParser()
-# parser.add_argument("--mass", dest="mass", type=int)
-# parser.add_argument("--gv", dest="gv", type=int)
-# parser.add_argument("--gf", dest="gf", type=float)
-
-# args = parser.parse_args()
-# m_values = [args.mass]
-# gv_values = [args.gv]
-# gF_values = [args.gf]
-
-# csv_file = f'BRs_{Vprime}prime_M{m_values[0]}_gv{gv_values[0]}_gf{gF_values[0]}.csv'
-
-gF_values = [round(x,3) for x in gF_values]
-gH_values = [round(x,3) for x in gH_values]
-gF_values = [x if abs(x)!=0 else 0.0 for x in gF_values]
-gH_values = [x if abs(x)!=0 else 0.0 for x in gH_values]
-
-print(gF_values)
-print(gH_values)
-
-for mass in m_values:
-    for gv in gv_values:
-        for gF in gF_values:
-            for gH in gH_values:
-                ch = round(get_ch(gH=gH, gv=gv),5)
-                cq = round(get_cq(gF=gF, gv=gv),5)
-                infos = {'M0': mass, 'g': HVT.g_su2, 'gv': gv, 'ch': ch, 'cl': cq}
-                condition = filterCondition(df, infos)
-                if len(df[condition])!=0:
-                    continue
-                entry = do_calculations(mass,gv,ch,cq,Vprime)
-                if entry == None:
-                    continue
-                df_list.append(pd.DataFrame([entry]))
-
-df = pd.concat([df]+df_list, ignore_index=True)
-df = df.astype('float32')
-df.to_csv(csv_file, index=False)
+def createCanvas(cname, isBR, decayName, Vprime, mass, nEntries, nEntries2, y_min = 2*1e-6, extra_info=[]):
+    if isBR:
+        canv = tdrCanvas(cname, -3.5, 3.5, y_min, 2, "g_{H} #times sign(g_{F})", f"BR({Vprime}'#rightarrow {decayName})", square=True, iPos =0)
+    else:
+        canv = tdrCanvas(cname, -3.5, 3.5, 1*1e-1, 1e4, "g_{H} #times sign(g_{F})", f"{decayName}({Vprime}'#rightarrow 2X) [GeV]", square=True, iPos =0)
+    canv.SetLogy(True)
+    leg = tdrLeg(0.63,0.15,0.95,0.15+(2+nEntries)*0.05)
+    if nEntries>5:
+        leg = tdrLeg(0.60,0.15,0.95,0.15+(1+nEntries/2)*0.05)
+        leg.SetNColumns(2)
+    leg2 = tdrLeg(0.25,0.18,0.50,0.18+(1+nEntries2)*0.045)
+    leg3 = tdrLeg(0.37,0.18,0.55,0.18+(1+nEntries2)*0.045)
+    # leg3 = tdrLeg(0.75,0.18,0.95,0.18+(3)*0.045)
+    
+    tdrHeader(leg, f"M({Vprime}') = {mass} GeV")
+    latex = rt.TLatex()
+    # latex.SetNDC()
+    # latex.SetTextAngle(0)
+    # latex.SetTextColor(rt.kBlack)
+    # latex.SetTextFont(TDR.extraTextFont3)
+    # # latex.SetTextAlign(align_)
+    # latex.SetTextSize(0.035)
+    # latex.DrawLatex(0.25, 0.35, f"M({Vprime}') = {mass} GeV")
+    # for ind,info in enumerate(extra_info):
+    #     latex.DrawLatex(0.2, 0.35-0.05*(ind+1), info)
+    return canv, leg, leg2, leg3, latex
 
 
-ref_graph = rt.TGraph(1, array('d',[100]), array('d',[100]))
-tdrDraw(ref_graph, "C", mcolor=rt.kBlack, lstyle=rt.kDashed)
+def plot_BR_per_model(graphs, mass, model):
+    gv, gf = 1, benchmarks[model]['gf']
+    cname = f'BRs_M{mass}_{model}'
 
-for mode, name in modes.items():
-    for mass in m_values:
-        for gv in gv_values:
-            graphs = {}
-            for gF in gF_values:
-                x_values = []
-                brs = []
-                for gH in gH_values:
-                    ch = round(get_ch(gH=gH, gv=gv),5)
-                    cq = round(get_cq(gF=gF, gv=gv),5)
-                    infos = {'M0': mass, 'g': HVT.g_su2, 'gv': gv, 'ch': ch, 'cl': cq}
-                    condition = filterCondition(df, infos)
-                    if len(df[condition])==0:
-                        continue
-                    br = df[condition][mode].iloc[0]
-                    # if gH
-                    # x_values.append(gH*math.copysign(1, gF))
-                    x_values.append(gH)
-                    brs.append(br)
-                graphs[gF] = rt.TGraph(len(x_values), array('d',x_values), array('d',brs))
-
-            cname = f"{mode}_M{mass}_gv{gv}_{Vprime}prime"
-            if 'BR' in mode:
-                canv = tdrCanvas(cname, -8, 8, 1*1e-5, 2, "g_{H}", f"BR({Vprime}'#rightarrow {name})", square=True, iPos =0)
-                canv.SetLogy(True)
-                # leg = tdrLeg(0.7,0.65-(2+len(graphs)/2)*0.045,0.89,0.65)
-                leg = tdrLeg(0.60,0.18,0.95,0.18+(1+len(graphs)/4)*0.045)
-                leg.SetNColumns(2)
-            else:
-                canv = tdrCanvas(cname, -8, 8, 1*1e-1, 1e4, "g_{H}", f"{name}({Vprime}'#rightarrow 2X) [GeV]", square=True, iPos =0)
-                canv.SetLogy(True)
-                # leg = tdrLeg(0.7,0.65-(2+len(graphs)/2)*0.045,0.89,0.65)
-                leg = tdrLeg(0.60,0.18,0.95,0.18+(1+len(graphs)/4)*0.045)
-                leg.SetNColumns(2)
-            
-            latex = rt.TLatex()
-            latex.SetNDC()
-            latex.SetTextAngle(0)
-            latex.SetTextColor(rt.kBlack)
-            latex.SetTextFont(TDR.extraTextFont3)
-            # latex.SetTextAlign(align_)
-            latex.SetTextSize(0.035)
-            latex.DrawLatex(0.2, 0.35, f"M({Vprime}') = {mass} GeV")
-            latex.DrawLatex(0.2, 0.30, "g_{V} = "+str(gv))
+    decays = OrderedDict([
+        ('BRhZ',   {'color': rt.kViolet+2, 'leg': 'VH/VV'}),
+        ('BRjets', {'color': rt.kAzure+2,  'leg': "qq/qq'"}),
+        ('BRnunu', {'color': rt.kGreen+2,  'leg': '#nu#nu'}),
+        ('BRlnu',  {'color': rt.kOrange+1, 'leg': 'l#nu'}),
+        ('BRll',   {'color': rt.kRed+1,    'leg': 'll'}),
+        ]) 
+    y_min=1*1e-5
+    gh, gf = benchmarks[model]['gh'], benchmarks[model]['gf']
+    x_model = gh*math.copysign(1, gf)
+    line = rt.TLine(x_model, y_min, x_model, 2)
+    canv, leg, leg2, leg3, latex = createCanvas(cname, True, "XY", 'V', mass, nEntries=len(decays)-2, nEntries2=3, y_min=y_min)
+    for decay, info in decays.items():
+        color = info['color']
+        lstyle = rt.kSolid
+        Vprime = 'Zprime' if decay != 'BRlnu' else 'Wprime'
+        gname = f'{Vprime}_{mass}_{gv}_{decay}_{gf}'
+        graph = graphs[gname]
+        if not graph:
+            print(f'Missing {gname}')
+            continue
+        graph.SetLineWidth(2)
+        tdrDraw(graph, "C", lcolor=color, lstyle=lstyle)
+        leg.AddEntry(graph, info['leg'], 'l')
+        marker = rt.kFullCircle
+        gname = f'{Vprime}_{mass}_{model}_{decay}'
+        graph_model = graphs[gname]
+        tdrDraw(graph_model, "P", mcolor=color, marker=marker)
+    lstyle = rt.kDashed
+    tdrDrawLine(line,lcolor=rt.kBlack, lstyle=lstyle, lwidth=2)
+    graphs['reference_'+model].SetLineWidth(2)
+    tdrDraw(graphs['reference_'+model], "C", mcolor=rt.kBlack, lstyle=lstyle)
+    leg2.AddEntry(graphs['reference_'+model], f'Model {model[-1]}', 'lp')
+    ref_obj = rt.TLine()
+    leg2.AddEntry(ref_obj, 'g_{F} = '+f'{gf}', '')
+    leg2.AddEntry(ref_obj, 'g_{H} = '+f'{gh}', '')
+    canv.SaveAs(f'pdfs/{cname}.pdf')
 
 
-            colors = {
-                # rt.kPink
-                # rt.kAzure+10,
-                # rt.kBlue+1,
-                # rt.kGray,
-                # rt.kGreen+1, rt.kGreen,
-                0.0: rt.kRed+1,
-                0.2: rt.kOrange+1,
-                0.4: rt.kOrange-2,
-                0.6: rt.kGreen+1,
-                0.8: rt.kGreen+2,
-                1.0: rt.kAzure+7,
-                1.2: rt.kAzure+2,
-                1.4: rt.kViolet+7,
-                1.6: 880,
+def plot():
+    m_values = get_masses()
+    gV_values = get_gVs()
+    gF_values = get_gFs()
+    gH_values = get_gHs()
+    f_ = rt.TFile(f'graphs.root')
 
-            }
+    graphs = {}
+    graphs['reference'] = rt.TGraph(1, array('d',[100]), array('d',[100]))
+    for model in benchmarks.keys():
+        graphs['reference_'+model] = rt.TGraph(1, array('d',[100]), array('d',[100]))
+    
+    for Vprime, decays in decay_modes.items():
+        for mass in m_values:
+            for gv in gV_values:
+                for decay in decays:
+                    for gf in gF_values:
+                        gname = f'{Vprime}_{mass}_{gv}_{decay}_{gf}'
+                        graphs[gname] = f_.Get(gname)
+            for model in benchmarks:
+                for decay in decays:
+                    gname = f'{Vprime}_{mass}_{model}_{decay}'
+                    graphs[gname] = f_.Get(gname)
+    f_.Close()
 
-            ind = -1
-            for gF, graph in graphs.items():
-                pos = gF>=0
-                ind += 1
-                # color = colors[ind]
-                color = colors[abs(gF)]
-                marker = rt.kFullCircle if pos else rt.kFullTriangleUp
-                lstyle = rt.kSolid if pos else rt.kDashed
-                graph.SetLineWidth(2)
-                tdrDraw(graph, "C", mcolor=color, marker=marker, msize=0.3, lstyle=lstyle)
-                if pos:
-                    leg.AddEntry(graph, 'g_{F}='+str(abs(gF)), 'l')
-            leg.AddEntry(ref_graph, 'g_{F}<0', 'l')
-            canv.SaveAs(f'pdfs/{cname}.pdf')
+    tdrDraw(graphs['reference'], "C", mcolor=rt.kBlack, lstyle=rt.kDashed)
+
+    for model in benchmarks.keys():
+        for mass in m_values:
+            plot_BR_per_model(graphs, mass, model)
+
+    # for mode, decayName in modes.items():
+        # for mass in m_values:
+            # for gv in gv_values:
+                # 
+                # cname = f"{mode}_M{mass}_gv{gv}_{Vprime}prime"
+                # canv, leg, leg2, leg3, latex = createCanvas(cname, 'BR' in mode, decayName, Vprime, mass, len(gF_values), 0)
+    # 
+                # for gF in gF_values:
+                    # gname = f"{mode}_{mass}_{gv}_{gF}"
+                    # graph = graphs[gname]
+                    # pos = gF>=0
+                    # color = colors[abs(gF)]
+                    # marker = rt.kFullCircle if pos else rt.kFullTriangleUp
+                    # lstyle = rt.kSolid if pos else rt.kDashed
+                    # graph.SetLineWidth(2)
+                    # tdrDraw(graph, "C", mcolor=color, marker=marker, msize=0.3, lstyle=lstyle)
+                    # if pos:
+                        # leg.AddEntry(graph, 'g_{F}='+str(abs(gF)), 'l')
+                # if any([x<0 for x in gF_values]):
+                    # leg.AddEntry(ref_graph, 'g_{F}<0', 'l')
+                # canv.SaveAs(f'pdfs/{cname}.pdf')
+                # canv.SaveAs(f'{cname}.pdf')
+    
+    # for mass in m_values:
+    #     for gv in gv_values:
+    #         cname = f"BRs_M{mass}_gv{gv}_{Vprime}prime"
+    #         canv, leg, leg2, leg3, latex = createCanvas(cname, True, "XY", Vprime, mass, len(modes)-2, 2, y_min=1*1e-5)
+    #         lines = {}
+    #         for mode, decayName in modes.items():
+    #             if 'GammaTot' in mode: continue
+    #             if 'BRtt' in mode: continue
+    #             is_VV = any([x in mode for x in ['W','Z','H','h']])
+    #             color = colors[mode]
+    #             # for gF in [0.6, 0.2, 0.0]:
+    #             for gF in [0.6]:
+    #                 if gF==0.0 and not is_VV:
+    #                     continue
+    #                 lstyle = rt.kSolid if gF==0.2 else (rt.kDotted if gF==0.6 else 6)
+    #                 gname = f"{mode}_{mass}_{gv}_{gF}"
+    #                 graph = graphs[gname]
+    #                 graph.SetLineWidth(2)
+    #                 tdrDraw(graph, "C", lcolor=color, lstyle=lstyle)
+    #                 if gF==0.2:
+    #                     leg.AddEntry(graph, decayName, 'l')
+    #                 if mode == list(modes.keys())[1]:
+    #                     graphs[f'reference_{gF}'] = rt.TGraph(1, array('d',[100]), array('d',[100]))
+    #                     tdrDraw(graphs[f'reference_{gF}'], "C", lcolor=rt.kBlack, lstyle=lstyle)
+    #                     leg3.AddEntry(graphs[f'reference_{gF}'], 'g_{F} = '+str(gF), 'l')
+    #                 # if any([x<0 for x in gF_values]):
+    #                 #     leg.AddEntry(ref_graph, 'g_{F}<0', 'l')
+    #             for model, benchmark in benchmarks.items():
+    #                 if not 'A' in model:
+    #                     continue
+    #                 if 'C' in model and not is_VV:
+    #                     continue
+    #                 marker = rt.kFullCircle if 'A' in model else (rt.kFullTriangleUp if 'B' in model else rt.kFullSquare)
+    #                 gname = f"{mode}_{mass}_{model}"
+    #                 graph_model = graphs[gname]
+    #                 tdrDraw(graph_model, "P", mcolor=color, marker=marker)
+    #                 if mode == list(modes.keys())[1]:
+    #                     graph_model_ref = graphs['reference_'+model]
+    #                     tdrDraw(graph_model_ref, "C", mcolor=rt.kBlack, marker=marker)
+    #                     leg2.AddEntry(graph_model_ref, f'model {model[-1]}', 'p')
+    #         # canv.SaveAs(f'pdfs/{cname}.pdf')
+    #         canv.SaveAs(f'{cname}_modelA.pdf')
+
+def main():
+    plot()
+
+if __name__ == "__main__":
+    main()

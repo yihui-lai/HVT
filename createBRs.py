@@ -21,7 +21,7 @@ def main():
     gv = round(args.gv,3)
     gf = round(args.gf,3)
     gh = round(args.gh,3)
-    csv_file = f'BRs/BRs_{Vprime}prime_M{mass}_gv{gv}_gf{gf}_gh{gh}.csv'
+    csv_file = f'BRs/BRs_{Vprime}_M{mass}_gv{gv}_gf{gf}_gh{gh}.csv'
     if os.path.exists(csv_file) and not args.overwrite:
         return
     

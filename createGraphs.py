@@ -2,6 +2,7 @@
 
 import os, math
 from array import array
+from collections import OrderedDict
 import pandas as pd
 import ROOT as rt
 import model as HVT
@@ -13,15 +14,15 @@ def createGraphs(overwrite=False):
     gF_values = get_gFs()
     gH_values = get_gHs()
     expected = sum([len(decays) for decays in decay_modes.values()])*len(m_values)*(len(gV_values)*len(gF_values)+len(benchmarks))
-    graphs = {}
+    graphs = OrderedDict()
     f_stored = rt.TFile('graphs.root', "READ")
     for Vprime, decays in decay_modes.items():
+        fname = f'BRs/BRs_{Vprime}.csv'
+        if not os.path.exists(fname):
+            continue
+        df = pd.read_csv(fname)
         for mass in m_values:
             for gv in gV_values:
-                fname = f'BRs/BRs_{Vprime}prime_M{mass}_gv{gv}.csv'
-                if not os.path.exists(fname):
-                    continue
-                df = pd.read_csv(fname)
                 for decay in decays:
                     for gf in gF_values:
                         gname = f'{Vprime}_{mass}_{gv}_{decay}_{gf}'
@@ -40,7 +41,7 @@ def createGraphs(overwrite=False):
                             if len(df[condition])!=0:
                                 filtered_df = df[condition]
                             else:
-                                fname = f'BRs/BRs_{Vprime}prime_M{mass}_gv{gv}_gf{gf}_gh{gh}.csv'
+                                fname = f'BRs/BRs_{Vprime}_M{mass}_gv{gv}_gf{gf}_gh{gh}.csv'
                                 if not os.path.exists(fname):
                                     continue
                                 df_model = pd.read_csv(fname)

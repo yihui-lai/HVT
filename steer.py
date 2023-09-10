@@ -5,7 +5,7 @@ from createGraphs import createGraphs
 from plot_BRs import plot
 
 def main():
-    # runJobs(runLocal=True, ncores=40)
+    runJobs(runLocal=True, ncores=40)
     merge_df(overwrite=False)
     createGraphs(overwrite=False)
     plot()

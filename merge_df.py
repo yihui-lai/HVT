@@ -2,7 +2,7 @@
 
 import os
 import pandas as pd
-from utils import decay_modes, store_df, get_masses, get_gVs, get_gFs, get_gHs
+from utils import decay_modes, get_csv_file, store_df, get_masses, get_gVs, get_gFs, get_gHs
 
 
 def merge(files, output, overwrite):
@@ -40,24 +40,24 @@ def merge_df(overwrite):
                 for gf in gF_values:
                     files_gh = []
                     for gh in gH_values:
-                        csv_file = f'BRs/BRs_{Vprime}_M{mass}_gv{gv}_gf{gf}_gh{gh}.csv'
+                        csv_file = get_csv_file(Vprime=Vprime,mass=mass,gv=gv,gf=gf,gh=gh)
                         if os.path.exists(csv_file):
                             files_gh.append(csv_file)
                         elif gf == 0 and gh ==0:
                             files_gh.append(None)
-                    output_gf = f'BRs/BRs_{Vprime}_M{mass}_gv{gv}_gf{gf}.csv'
+                    output_gf = get_csv_file(Vprime=Vprime,mass=mass,gv=gv,gf=gf)
                     run_merge(inputs=files_gh, output=output_gf, reference=gH_values, overwrite=overwrite)
                     if os.path.exists(output_gf):
                         files_gf.append(output_gf)
-                output_gv = f'BRs/BRs_{Vprime}_M{mass}_gv{gv}.csv'
+                output_gv = get_csv_file(Vprime=Vprime,mass=mass,gv=gv)
                 run_merge(inputs=files_gf, output=output_gv, reference=gF_values, overwrite=overwrite)
                 if os.path.exists(output_gv):
                     files_gv.append(output_gv)
-            output_mass = f'BRs/BRs_{Vprime}_M{mass}.csv'
+            output_mass = get_csv_file(Vprime=Vprime,mass=mass)
             run_merge(inputs=files_gv, output=output_mass, reference=gV_values, overwrite=overwrite)
             if os.path.exists(output_mass):
                 files_mass.append(output_mass)
-        output_vprime = f'BRs/BRs_{Vprime}.csv'
+        output_vprime = get_csv_file(Vprime=Vprime)
         run_merge(inputs=files_mass, output=output_vprime, reference=m_values, overwrite=overwrite)
                 
 def main(overwrite):

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-import os, math
+import math
 import ROOT as rt
 from collections import OrderedDict
 from array import array
-from utils import decay_modes, get_masses, get_gVs, get_gFs, get_gHs, benchmarks
+from utils import decay_modes, get_masses, get_gVs, get_gFs, benchmarks
 
 from tdrstyle import *
 import tdrstyle as TDR
@@ -61,11 +61,9 @@ def createCanvas(cname, isBR, decayName, Vprime, mass, nEntries, nEntries2, y_mi
         leg = tdrLeg(0.60,0.18,0.95,0.18+(1+nEntries/2)*0.05)
         leg.SetNColumns(2)
     leg2 = tdrLeg(0.25,0.18,0.50,0.18+(1+nEntries2)*0.045)
-    leg3 = tdrLeg(0.37,0.18,0.55,0.18+(1+nEntries2)*0.045)
-    # leg3 = tdrLeg(0.75,0.18,0.95,0.18+(3)*0.045)
     
     tdrHeader(leg, f"M({Vprime}') = {mass} GeV")
-    latex = rt.TLatex()
+    # latex = rt.TLatex()
     # latex.SetNDC()
     # latex.SetTextAngle(0)
     # latex.SetTextColor(rt.kBlack)
@@ -75,7 +73,7 @@ def createCanvas(cname, isBR, decayName, Vprime, mass, nEntries, nEntries2, y_mi
     # latex.DrawLatex(0.25, 0.35, f"M({Vprime}') = {mass} GeV")
     # for ind,info in enumerate(extra_info):
     #     latex.DrawLatex(0.2, 0.35-0.05*(ind+1), info)
-    return canv, leg, leg2, leg3, latex
+    return canv, leg, leg2
 
 
 def plot_BR_per_model(graphs, mass, model):
@@ -93,16 +91,16 @@ def plot_BR_per_model(graphs, mass, model):
     gh, gf = benchmarks[model]['gh'], benchmarks[model]['gf']
     x_model = gh*math.copysign(1, gf)
     line = rt.TLine(x_model, y_min, x_model, 2)
-    canv, leg, leg2, leg3, latex = createCanvas(cname, True, "XY", 'V', mass, nEntries=len(decays)-2, nEntries2=3, y_min=y_min)
+    canv, leg, leg2 = createCanvas(cname, True, "XY", 'V', mass, nEntries=len(decays)-2, nEntries2=3, y_min=y_min)
     for decay, info in decays.items():
         color = info['color']
         lstyle = rt.kSolid
         Vprime = 'Zprime' if decay != 'BRlnu' else 'Wprime'
         gname = f'{Vprime}_{mass}_{gv}_{decay}_{gf}'
-        graph = graphs[gname]
-        if not graph:
+        if not gname in graphs:
             print(f'Missing {gname}')
             continue
+        graph = graphs[gname]
         graph.SetLineWidth(2)
         tdrDraw(graph, "C", lcolor=color, lstyle=lstyle)
         leg.AddEntry(graph, info['leg'], 'l')
@@ -135,7 +133,7 @@ def plot_gf_graphs(graphs, Vprime, mass, gv, decay, decayName):
         1.4:  rt.kRed+1,
     }
     isVV = any([x in decay for x in ['W','Z','H','h']])
-    canv, leg, leg2, leg3, latex = createCanvas(cname, 'BR' in decay, decayName, Vprime.replace('prime',''), mass, len(gF_values), 0, y_min=1e-08)
+    canv, leg, _ = createCanvas(cname, 'BR' in decay, decayName, Vprime.replace('prime',''), mass, len(gF_values), 0, y_min=1e-08)
     for gf, color in gF_values.items():
         if not isVV and gf==0:
             gf= get_gFs()[2]

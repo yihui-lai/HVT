@@ -1,65 +1,53 @@
 #!/usr/bin/env python3
 
 import os
-import pandas as pd
-import model as HVT
-from utils import decay_modes, get_masses, get_gVs, get_gFs, get_gHs, filterCondition
+from utils import BRs_in_df, get_csv_file, decay_modes, get_masses, get_gVs, get_gFs, get_gHs
 from parallelize import parallelize
-from ClusterSubmission.CondorBase import SubmitListToCondor
+
+debug = True
 
 def runJobs(runLocal, ncores):
     m_values = get_masses()
     gV_values = get_gVs()
     gF_values = get_gFs()
     gH_values = get_gHs()
-    
+    print('m_values', len(m_values))
+    print('gV_values', len(gV_values))
+    print('gF_values', len(gF_values))
+    print('gH_values', len(gH_values))
+    print('Max', len(decay_modes.keys())*len(m_values)*len(gV_values)*len(gF_values)*len(gH_values))
     jobArgs = []
+    tot = 0
     for Vprime in decay_modes.keys():
+        print(f'Looking for {Vprime}')
         for mass in m_values:
+            print(f'  Looking for {mass}')
             for gv in gV_values:
                 for gf in gF_values:
                     for gh in gH_values:
                         if gf == 0 and gh ==0:
                             continue
-                        csv_file = f'BRs/BRs_{Vprime}_M{mass}_gv{gv}_gf{gf}_gh{gh}.csv'
+                        csv_file = get_csv_file(Vprime=Vprime,mass=mass,gv=gv,gf=gf,gh=gh)
+                        tot += 1
                         if os.path.exists(csv_file):
                             continue
-                        csv_file_merged = f'BRs/BRs_{Vprime}_M{mass}_gv{gv}_gf{gf}.csv'
-                        if os.path.exists(csv_file_merged):
-                            df = pd.read_csv(csv_file_merged)
-                            ch = round(HVT.get_ch(gH=gh, gv=gv),5)
-                            cq = round(HVT.get_cq(gF=gf, gv=gv),5)
-                            infos = {'M0': mass, 'g': HVT.g_su2, 'gv': gv, 'ch': ch, 'cl': cq}
-                            condition = filterCondition(df, infos)
-                            if len(df[condition])!=0:
-                                continue
+                        # if BRs_in_df(get_csv_file(Vprime=Vprime), mass, gv, gf, gh) is not None:
+                        #     continue
+                        # if BRs_in_df(get_csv_file(Vprime=Vprime,mass=mass), mass, gv, gf, gh) is not None:
+                        #     continue
+                        # if BRs_in_df(get_csv_file(Vprime=Vprime,mass=mass,gv=gv), mass, gv, gf, gh) is not None:
+                        #     continue
+                        # if BRs_in_df(get_csv_file(Vprime=Vprime,mass=mass,gv=gv,gf=gf), mass, gv, gf, gh) is not None:
+                        #     continue
                         runCommand = f"--Vprime {Vprime} --mass {mass} --gv {gv} --gf {gf} --gh {gh}"
                         jobArgs.append(runCommand)
-    
-    if False:
-        jobArgs = []
-        Vprime = 'Zprime'
-        mass = 2000
-        gv = 1
-        gf = 0.01
-        gh = 0.01
-        runCommand = f"--Vprime {Vprime} --mass {mass} --gv {gv} --gf {gf} --gh {gh}"
-        jobArgs.append(runCommand)
 
     jobExec = f"{os.getcwd()}/createBRs.py"
     if runLocal:
         commands = [f'{jobExec} {args}' for args in jobArgs]
-        # print(commands)
-        print(f'Running locally {len(commands)} commands')
+        print(f'Running locally {len(commands)} commands out of {tot}')
         if len(commands)!=0:
-            parallelize(commands, ncores=ncores)
-    else:
-        JsonInfo = {
-            'MY.SendCredential': 'True',
-            'environment': f"PYTHON3PATH={os.environ.get('PYTHON3PATH', '')}"
-            }
-        SubmitListToCondor(jobArgs, jobExec, JsonInfo=JsonInfo, JobName='HVT', debug=True)
-        # SubmitListToCondor(jobArgs, jobExec, JsonInfo=JsonInfo, JobName='HVT')
+            _ = parallelize(commands, ncores=ncores)
 
 def main(runLocal, ncores):
     runJobs(runLocal, ncores=ncores)

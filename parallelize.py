@@ -3,7 +3,15 @@ import os, sys, time, psutil
 import functools
 import subprocess
 from multiprocessing import Pool
-from ClusterSubmission.printing_utils import blue, red
+
+def modify_printed_string(type,string):
+    return "%s%s\033[0m"%(type,string)
+
+def red(string):
+    return modify_printed_string('\x1b[0;31m',string)
+
+def blue(string):
+    return modify_printed_string('\x1b[0;34m',string)
 
 class SimpleNamespace:
     def __init__(self, **kwargs):
@@ -57,7 +65,7 @@ def kill(proc_pid):
     process.kill()
 
 @timeit
-def parallelize(commands, getoutput=False, logfiles=[], ncores=8, cwd=False, niceness=10, remove_temp_files=True, time_to_sleep = 0.5, wait_time=None):
+def parallelize(commands, getoutput=True, logfiles=[], ncores=8, cwd=False, niceness=10, remove_temp_files=True, time_to_sleep = 0.5, wait_time=None):
     def wait_for_process(sn):
         for idx in list(sn.processes.keys()):
             sn.processes[idx]['iter'] += sn.time_to_sleep

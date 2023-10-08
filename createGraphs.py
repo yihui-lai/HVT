@@ -5,8 +5,7 @@ from array import array
 from collections import OrderedDict
 import pandas as pd
 import ROOT as rt
-import model as HVT
-from utils import filterCondition, decay_modes, get_masses, get_gVs, get_gFs, get_gHs, benchmarks
+from utils import get_csv_file, get_minimum_set, filterCondition, get_BRs_from_df, decay_modes, get_masses, get_gVs, get_gFs, get_gHs, benchmarks
 
 def createGraphs(overwrite=False):
     m_values = get_masses()
@@ -15,9 +14,9 @@ def createGraphs(overwrite=False):
     gH_values = get_gHs()
     expected = sum([len(decays) for decays in decay_modes.values()])*len(m_values)*(len(gV_values)*len(gF_values)+len(benchmarks))
     graphs = OrderedDict()
-    f_stored = rt.TFile('graphs.root', "READ")
+    f_stored = rt.TFile('graphs.root', "READ") if os.path.exists('graphs.root') else None
     for Vprime, decays in decay_modes.items():
-        fname = f'BRs/BRs_{Vprime}.csv'
+        fname = get_csv_file(Vprime=Vprime)
         if not os.path.exists(fname):
             continue
         df = pd.read_csv(fname)
@@ -28,27 +27,21 @@ def createGraphs(overwrite=False):
                         gname = f'{Vprime}_{mass}_{gv}_{decay}_{gf}'
                         if gname in graphs:
                             raise ValueError(f'graph already exists: {gname}')
-                        graphs[gname] = f_stored.Get(gname)
+                        graphs[gname] = f_stored.Get(gname) if f_stored else None
                         if graphs[gname] and not overwrite:
                             continue
                         x_values = []
                         brs = []
                         for gh in gH_values:
-                            ch = round(HVT.get_ch(gH=gh, gv=gv),5)
-                            cq = round(HVT.get_cq(gF=gf, gv=gv),5)
-                            infos = {'M0': mass, 'g': HVT.g_su2, 'gv': gv, 'ch': ch, 'cl': cq}
-                            condition = filterCondition(df, infos)
-                            if len(df[condition])!=0:
-                                filtered_df = df[condition]
-                            else:
-                                fname = f'BRs/BRs_{Vprime}_M{mass}_gv{gv}_gf{gf}_gh{gh}.csv'
+                            filtered_df = get_BRs_from_df(df, mass, gv, gf, gh)
+                            if filtered_df is None:
+                                fname = get_csv_file(Vprime=Vprime,mass=mass,gv=gv,gf=gf,gh=gh)
+                                print(f"Model not in central df. Checking in {fname}")
                                 if not os.path.exists(fname):
                                     continue
                                 df_model = pd.read_csv(fname)
-                                condition = filterCondition(df_model, infos)
-                                if len(df_model[condition])!=0:
-                                    filtered_df = df[condition]
-                                else:
+                                filtered_df = get_BRs_from_df(df_model, mass, gv, gf, gh)
+                                if filtered_df is None:
                                     continue
                             br = filtered_df[decay].iloc[0]
                             x_values.append(gh*math.copysign(1, gf))
@@ -72,7 +65,9 @@ def createGraphs(overwrite=False):
                         if x_ == x:
                             y = graph.Eval(x)
                     graphs[gname] = rt.TGraph(1, array('d',[x]), array('d',[y]))
-    f_stored.Close()
+                    print(f"Created graph: {gname}")
+    if f_stored:
+        f_stored.Close()
     print(f'Created {len(graphs)}/{expected} graphs')
     f_ = rt.TFile('graphs.root', "RECREATE")
     for name, graph in graphs.items():

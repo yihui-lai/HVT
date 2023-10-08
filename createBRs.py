@@ -3,7 +3,7 @@
 import os, argparse
 import pandas as pd
 import model as HVT
-from utils import do_calculations, store_df
+from utils import do_calculations, store_df, get_csv_file
 
 
 def main():
@@ -21,7 +21,7 @@ def main():
     gv = round(args.gv,3)
     gf = round(args.gf,3)
     gh = round(args.gh,3)
-    csv_file = f'BRs/BRs_{Vprime}_M{mass}_gv{gv}_gf{gf}_gh{gh}.csv'
+    csv_file = get_csv_file(Vprime=Vprime,mass=mass,gv=gv,gf=gf,gh=gh)
     if os.path.exists(csv_file) and not args.overwrite:
         return
     

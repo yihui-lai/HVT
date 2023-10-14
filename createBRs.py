@@ -2,7 +2,6 @@
 
 import os, argparse
 import pandas as pd
-import model as HVT
 from utils import do_calculations, store_df, get_csv_file
 
 
@@ -25,9 +24,7 @@ def main():
     if os.path.exists(csv_file) and not args.overwrite:
         return
     
-    ch = round(HVT.get_ch(gH=gh, gv=gv),5)
-    cq = round(HVT.get_cq(gF=gf, gv=gv),5)
-    entry = do_calculations(mass,gv,ch,cq,Vprime)
+    entry = do_calculations(mass,gv,gf,gh,Vprime)
     if entry == None:
         return
     df = pd.DataFrame([entry])

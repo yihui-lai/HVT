@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
-from model import HVT, get_ch, get_cq
+from model import HVT
 
 def get_csv_file(Vprime,mass=None,gv=None,gf=None,gh=None):
     dir_ = f'BRs/'
@@ -10,10 +10,14 @@ def get_csv_file(Vprime,mass=None,gv=None,gf=None,gh=None):
         dir_ += f'{Vprime}/'
         csv_file += f'_M{mass}'
     if gv!= None:
-        dir_ += f'{mass}/'
+        dir_ += f'mass_{mass}/'
         csv_file += f'_gv{gv}'
-    if gf!= None: csv_file += f'_gf{gf}'
-    if gh!= None: csv_file += f'_gh{gh}'
+    if gf!= None:
+        dir_ += f'gv_{gv}/'
+        csv_file += f'_gf{gf:.3f}'
+    if gh!= None:
+        dir_ += f'gf_{gf:.3f}/'
+        csv_file += f'_gh{gh:.3f}'
     csv_file += '.csv'
     return dir_+csv_file
 
@@ -26,17 +30,9 @@ def filterCondition(data, infos):
             condition &= data[key] == value
     return condition
 
-def get_minimum_set(mass, gh=None, gf=None, gv=None, ch=None, cq=None):
-    if ch==None:
-        ch = round(get_ch(gH=gh, gv=gv),5)
-    if cq==None:
-        cq = round(get_cq(gF=gf, gv=gv),5)
-    infos = {'M0': mass, 'g': HVT.g_su2, 'gv': gv, 'ch': ch, 'cl': cq}
-    return infos
-
 def get_BRs_from_df(df, mass, gv, gf, gh):
     df_selected = None
-    infos = get_minimum_set(mass, gh=gh, gf=gf, gv=gv)
+    infos = {'M0':mass, 'gh':gh, 'gf':gf, 'gv':gv}
     condition = filterCondition(df, infos)
     if len(df[condition])!=0:
         df_selected = df[condition]
@@ -49,12 +45,12 @@ def BRs_in_df(df_name, mass, gv, gf, gh):
         df_selected = get_BRs_from_df(df, mass, gv, gf, gh)
     return df_selected
 
-def do_calculations(mass,gv,ch,cq,Vprime):
-    hvt = HVT(MVz= mass, gv= gv, cq= cq, ch= ch)
+def do_calculations(mass,gv,gf,gh,Vprime):
+    hvt = HVT(MVz= mass, gv= gv, gf=gf, gh=gh)
     hvt.setup()
-    if abs(ch)==0 and abs(cq)==0:
+    if abs(gf)==0 and abs(gh)==0:
         return None
-    print(f'Calculating BR for mass: {mass} gv: {gv} cq: {cq} ch: {ch}')
+    print(f'Calculating BR for mass: {mass} gv: {gv} gf: {gf} gh: {gh}')
     if Vprime=='Zprime':
         tot = hvt.ZprimeTot.real
     if Vprime=='Wprime':
@@ -65,9 +61,11 @@ def do_calculations(mass,gv,ch,cq,Vprime):
         entry = {
             'M0': mass,
             'g': hvt.g_su2,
-            'gv': gv,
-            'ch': ch,
-            'cl': cq,
+            'gv': hvt.gv,
+            'gh': hvt.gh,
+            'gf': hvt.gf,
+            'ch': hvt.ch,
+            'cl': hvt.cq,
             'GammaTot': tot,
             'BRWW':     hvt.ZprimeWW.real/tot,
             'BRhZ':     hvt.ZprimeZH.real/tot,
@@ -89,9 +87,11 @@ def do_calculations(mass,gv,ch,cq,Vprime):
         entry = {
             'M0': mass,
             'g': hvt.g_su2,
-            'gv': gv,
-            'ch': ch,
-            'cl': cq,
+            'gv': hvt.gv,
+            'gh': hvt.gh,
+            'gf': hvt.gf,
+            'ch': hvt.ch,
+            'cl': hvt.cq,
             'GammaTot':tot,
             'BRWH':    hvt.WprimeHW.real/tot,
             'BRWZ':    hvt.WprimeWZ.real/tot,
@@ -110,16 +110,14 @@ def do_calculations(mass,gv,ch,cq,Vprime):
     return entry
 
 def store_df(df, fname):
-    directory = os.path.dirname(fname)
-    if not os.path.exists(directory):
-        os.makedirs(directory, exist_ok=True)
+    os.makedirs(os.path.dirname(fname), exist_ok=True)
     df = df.astype('float32')
     df.to_csv(fname, index=False)
     print("Created", fname)
 
 def get_masses():
     m_values = [1000, 2000, 3000, 4000]
-    # m_values = [4000]
+    # m_values = [1000]
     return m_values
 
 def get_gVs():
@@ -128,15 +126,15 @@ def get_gVs():
 
 def get_gFs():
     gF_values = [data['gf'] for data in benchmarks.values()]
-    gF_values += list(np.arange(0.0, 1.0+0.01, 0.01))
-    gF_values += list(np.arange(1.0, 1.6+0.1,  0.1))
+    gF_values += list(np.arange(0.01, 0.1+0.01, 0.001))
+    gF_values += list(np.arange(0.1,  0.5+0.01, 0.005))
+    gF_values += list(np.arange(0.5,  1.6+0.1,  0.1))
     gF_values = list(sorted(set([round(x,3) for x in gF_values])))
     return gF_values
 
 def get_gHs():
     gH_values = [data['gh'] for data in benchmarks.values()]
     gH_values += list(np.arange(-2.0, 2.0+0.01, 0.01))
-    gH_values += list(np.arange(-4.0, 4.0+0.1,  0.1))
     gH_values += list(np.arange(-8.0, 8.0+0.5,  0.5))
     gH_values = list(sorted(set([round(x,3) for x in gH_values])))
     return gH_values

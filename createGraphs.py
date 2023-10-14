@@ -5,7 +5,7 @@ from array import array
 from collections import OrderedDict
 import pandas as pd
 import ROOT as rt
-from utils import get_csv_file, get_minimum_set, filterCondition, get_BRs_from_df, decay_modes, get_masses, get_gVs, get_gFs, get_gHs, benchmarks
+from utils import get_csv_file, filterCondition, get_BRs_from_df, decay_modes, get_masses, get_gVs, get_gFs, get_gHs, benchmarks
 
 def createGraphs(overwrite=False):
     m_values = get_masses()

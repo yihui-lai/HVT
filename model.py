@@ -3,7 +3,11 @@ import numpy as np
 
 class HVT():
     g_su2= 0.6534 # 80,377*2/246 (from PDG values)
-    def __init__(self, MVz, gv, ch, cq):
+    def __init__(self, MVz, gv, gh, gf):
+        self.MVz = MVz
+        self.gv = gv
+        self.gh = gh
+        self.gf = gf
         self.cvvhh  = 0.0
         self.cvvw   = 0.0
         self.cvvv   = 0.0
@@ -20,18 +24,15 @@ class HVT():
         self.MH = 125.5
         self.MZ = 91.1876
         self.cabi = 0.22759
-        self.MVz = MVz
-        self.gv = gv
-        self.ch = ch
-        self.cq = cq
+
+    def setup(self):
+        self.aEW = 1./self.aEWM1
+        self.ee = 2*cmath.sqrt(self.aEW)*cmath.sqrt(cmath.pi)
+        self.set_ch()
+        self.set_cq()
         self.cl = self.cq
         self.c3 = self.cq
         self.gst = self.gv
-
-        self.aEW = 1./self.aEWM1
-        self.ee = 2*cmath.sqrt(self.aEW)*cmath.sqrt(cmath.pi)
-
-    def setup(self):
         self.set_gw()
         self.set_mV()
         self.set_vv()
@@ -81,6 +82,12 @@ class HVT():
         self.set_WprimeVzW()
         self.set_ZprimeTot()
         self.set_WprimeTot()
+    
+    def set_ch(self):
+        self.ch = round(self.gh/self.gv,5)
+
+    def set_cq(self):
+        self.cq = round(self.gf*self.gv/(HVT.g_su2*HVT.g_su2),5)
 
     def set_gw(self):
         self.gw = cmath.sqrt(2)*cmath.sqrt((self.gst**4*self.MVz**4*(-8*self.aEW*cmath.pi*self.Gf**3*self.MZ**6 + 8*self.aEW**2*cmath.pi**2*self.Gf**2*self.MZ**4*cmath.sqrt(2) + self.Gf**4*self.MZ**8*cmath.sqrt(2) + 8*self.aEW**2*cmath.pi**2*self.Gf*cmath.sqrt(2)*(self.Gf**2*self.MZ**12*(8*self.aEW**2*cmath.pi**2 + self.Gf**2*self.MZ**4 - 4*self.aEW*cmath.pi*self.Gf*self.MZ**2*cmath.sqrt(2)))**0.25 - 8*self.aEW*cmath.pi*cmath.sqrt(self.Gf**5*self.MZ**10*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2))) + cmath.sqrt(2)*cmath.sqrt(self.Gf**7*self.MZ**14*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2)))) + 4*self.ch**2*self.cl**2*self.gst**4*(-8*self.aEW**3*cmath.pi**3*self.Gf*self.MZ**6 - 9*self.aEW*cmath.pi*self.Gf**3*self.MZ**10 + 12*self.aEW**2*cmath.pi**2*self.Gf**2*self.MZ**8*cmath.sqrt(2) + self.Gf**4*self.MZ**12*cmath.sqrt(2) - self.aEW*cmath.pi*(self.aEW*cmath.pi*(self.aEW*cmath.pi*self.MZ**2*(self.Gf**2*self.MZ**12*(8*self.aEW**2*cmath.pi**2 + self.Gf**2*self.MZ**4 - 4*self.aEW*cmath.pi*self.Gf*self.MZ**2*cmath.sqrt(2)))**0.25 - 6*cmath.sqrt(2)*cmath.sqrt(self.Gf**3*self.MZ**14*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2)))) + 7*cmath.sqrt(self.Gf**5*self.MZ**18*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2)))) + cmath.sqrt(2)*cmath.sqrt(self.Gf**7*self.MZ**22*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2)))) - 8*self.cl**2*self.gst**2*self.MVz**2*(16*self.aEW**2*cmath.pi**2*self.Gf**3*self.MZ**8 + self.Gf**5*self.MZ**12 - 8*self.aEW**3*cmath.pi**3*self.Gf**2*self.MZ**6*cmath.sqrt(2) - 5*self.aEW*cmath.pi*self.Gf**4*self.MZ**10*cmath.sqrt(2) + self.aEW*cmath.pi*(self.aEW*cmath.pi*(-2*self.aEW*cmath.pi*cmath.sqrt(2)*cmath.sqrt(self.Gf**3*self.MZ**10*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2))) + 9*cmath.sqrt(self.Gf**5*self.MZ**14*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2)))) - 4*cmath.sqrt(2)*cmath.sqrt(self.Gf**7*self.MZ**18*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2)))) + cmath.sqrt(self.Gf**9*self.MZ**22*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2)))) - 2*self.ch*self.cl*self.gst**2*(-(self.gst**2*self.MVz**2*(-8*self.aEW**3*cmath.pi**3*self.Gf*self.MZ**4 - 9*self.aEW*cmath.pi*self.Gf**3*self.MZ**8 + 12*self.aEW**2*cmath.pi**2*self.Gf**2*self.MZ**6*cmath.sqrt(2) + self.Gf**4*self.MZ**10*cmath.sqrt(2) + self.aEW*cmath.pi*(6*self.aEW*cmath.pi*cmath.sqrt(2)*cmath.sqrt(self.Gf**3*self.MZ**10*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2))) - 7*cmath.sqrt(self.Gf**5*self.MZ**14*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2)))) + cmath.sqrt(2)*cmath.sqrt(self.Gf**7*self.MZ**18*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2))))) + 4*self.cl**2*(8*self.aEW**4*cmath.pi**4*self.Gf*self.MZ**6 + 97*self.aEW**2*cmath.pi**2*self.Gf**3*self.MZ**10 + 6*self.Gf**5*self.MZ**14 - 52*self.aEW**3*cmath.pi**3*self.Gf**2*self.MZ**8*cmath.sqrt(2) - 30*self.aEW*cmath.pi*self.Gf**4*self.MZ**12*cmath.sqrt(2) + self.aEW*cmath.pi*(5*self.aEW*cmath.pi*(-3*self.aEW*cmath.pi*cmath.sqrt(2)*cmath.sqrt(self.Gf**3*self.MZ**14*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2))) + 11*cmath.sqrt(self.Gf**5*self.MZ**18*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2)))) - 24*cmath.sqrt(2)*cmath.sqrt(self.Gf**7*self.MZ**22*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2)))) + 6*cmath.sqrt(self.Gf**9*self.MZ**26*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2))))) + 16*self.cl**4*(-120*self.aEW**3*cmath.pi**3*self.Gf**3*self.MZ**10 - 44*self.aEW*cmath.pi*self.Gf**5*self.MZ**14 + 24*self.aEW**4*cmath.pi**4*self.Gf**2*self.MZ**8*cmath.sqrt(2) + 83*self.aEW**2*cmath.pi**2*self.Gf**4*self.MZ**12*cmath.sqrt(2) + 4*self.Gf**6*self.MZ**16*cmath.sqrt(2) + self.aEW*cmath.pi*(self.aEW*cmath.pi*(self.aEW*cmath.pi*(3*self.aEW*cmath.pi*cmath.sqrt(2)*cmath.sqrt(self.Gf**3*self.MZ**14*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2))) - 46*cmath.sqrt(self.Gf**5*self.MZ**18*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2)))) + 51*cmath.sqrt(2)*cmath.sqrt(self.Gf**7*self.MZ**22*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2)))) - 36*cmath.sqrt(self.Gf**9*self.MZ**26*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2)))) + 4*cmath.sqrt(2)*cmath.sqrt(self.Gf**11*self.MZ**30*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2)))))/(self.Gf*self.gst**4*self.MVz**4*self.MZ**2*(self.Gf*self.MZ**2 - 2*self.aEW*cmath.pi*cmath.sqrt(2))**2))
@@ -274,9 +281,3 @@ class HVT():
 
 # def gF():
 #     return g_su2*g_su2*self.cq/gv # self.cl = self.cq
-
-def get_ch(gH, gv=3):
-    return gH/gv
-
-def get_cq(gF, gv=3):
-    return gF*gv/(HVT.g_su2*HVT.g_su2)

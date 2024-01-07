@@ -6,28 +6,29 @@ from parallelize import parallelize
 
 debug = True
 
+
 def runJobs(runLocal, ncores):
     m_values = get_masses()
     gV_values = get_gVs()
     gF_values = get_gFs()
     gH_values = get_gHs()
-    print('m_values', len(m_values))
-    print('gV_values', len(gV_values))
-    print('gF_values', len(gF_values))
-    print('gH_values', len(gH_values))
-    print('Max', len(decay_modes.keys())*len(m_values)*len(gV_values)*len(gF_values)*len(gH_values))
+    print("m_values", len(m_values))
+    print("gV_values", len(gV_values))
+    print("gF_values", len(gF_values))
+    print("gH_values", len(gH_values))
+    print("Max", len(decay_modes.keys()) * len(m_values) * len(gV_values) * len(gF_values) * len(gH_values))
     jobArgs = []
     tot = 0
     for Vprime in decay_modes.keys():
-        print(f'Looking for {Vprime}')
+        print(f"Looking for {Vprime}")
         for mass in m_values:
-            print(f'  Looking for {mass}')
+            print(f"  Looking for {mass}")
             for gv in gV_values:
                 for gf in gF_values:
                     for gh in gH_values:
-                        if gf == 0 and gh ==0:
+                        if gf == 0 and gh == 0:
                             continue
-                        csv_file = get_csv_file(Vprime=Vprime,mass=mass,gv=gv,gf=gf,gh=gh)
+                        csv_file = get_csv_file(Vprime=Vprime, mass=mass, gv=gv, gf=gf, gh=gh)
                         tot += 1
                         if os.path.exists(csv_file):
                             continue
@@ -44,13 +45,15 @@ def runJobs(runLocal, ncores):
 
     jobExec = f"{os.getcwd()}/createBRs.py"
     if runLocal:
-        commands = [f'{jobExec} {args}' for args in jobArgs]
-        print(f'Running locally {len(commands)} commands out of {tot}')
-        if len(commands)!=0:
+        commands = [f"{jobExec} {args}" for args in jobArgs]
+        print(f"Running locally {len(commands)} commands out of {tot}")
+        if len(commands) != 0:
             _ = parallelize(commands, ncores=ncores)
+
 
 def main(runLocal, ncores):
     runJobs(runLocal, ncores=ncores)
+
 
 if __name__ == "__main__":
     main(runLocal=True, ncores=30)

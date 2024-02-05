@@ -53,7 +53,7 @@ TDR.cms_lumi = ""
 
 def createCanvas(cname, isBR, decayName, Vprime, mass, nEntries, nEntries2, y_min=2 * 1e-6, extra_info=[]):
     if isBR:
-        canv = tdrCanvas(cname, -3.5, 3.5, y_min, 2, "g_{H} #times sign(g_{F})", f"BR({Vprime}'#rightarrow {decayName})", square=True, iPos=0)
+        canv = tdrCanvas(cname, -3.5, 3.5, y_min, 2, "g_{H} #times sign(g_{F})", f"#font[12]{{B}}({Vprime}'#rightarrow {decayName})", square=True, iPos=0)
     else:
         canv = tdrCanvas(cname, -3.5, 3.5, 1 * 1e-3, 1e4, "g_{H} #times sign(g_{F})", f"{decayName}({Vprime}'#rightarrow 2X) [GeV]", square=True, iPos=0)
     canv.SetLogy(True)

@@ -12,13 +12,13 @@ def get_csv_file(Vprime, mass=None, gv=None, gf=None, gh=None):
         csv_file += f"_M{mass}"
     if gv != None:
         dir_ += f"mass_{mass}/"
-        csv_file += f"_gv{gv}"
+        csv_file += f"_gv{gv:.12f}"
     if gf != None:
-        dir_ += f"gv_{gv}/"
-        csv_file += f"_gf{gf:.3f}"
+        dir_ += f"gv_{gv:.12f}/"
+        csv_file += f"_gf{gf:.12f}"
     if gh != None:
-        dir_ += f"gf_{gf:.3f}/"
-        csv_file += f"_gh{gh:.3f}"
+        dir_ += f"gf_{gf:.12f}/"
+        csv_file += f"_gh{gh:.12f}"
     csv_file += ".csv"
     return dir_ + csv_file
 
@@ -117,14 +117,14 @@ def do_calculations(mass, gv, gf, gh, Vprime):
 
 def store_df(df, fname):
     os.makedirs(os.path.dirname(fname), exist_ok=True)
-    df = df.astype("float32")
+    df = df.astype("float64")
     df.to_csv(fname, index=False)
     print("Created", fname)
 
 
-def get_masses():
-    m_values = [1000, 2000, 3000, 4000]
-    # m_values = [1000]
+def get_masses(m_values):
+    #m_values = [1000, 2000, 3000, 4000, 5000, 6000]
+    m_values = m_values
     return m_values
 
 
@@ -133,27 +133,48 @@ def get_gVs():
     return gV_values
 
 
-def get_gFs():
-    gF_values = [data["gf"] for data in benchmarks.values()]
-    gF_values += list(np.arange(0.01, 0.1 + 0.01, 0.001))
-    gF_values += list(np.arange(0.1, 0.5 + 0.01, 0.005))
-    gF_values += list(np.arange(0.5, 1.6 + 0.1, 0.1))
-    gF_values = list(sorted(set([round(x, 3) for x in gF_values])))
+def get_gFs(gfstart, gfend):
+#    gF_values = [abs(data["gf"]) for data in benchmarks.values()]
+    gF_values = list(np.logspace(np.log10(0.0005), np.log10(5), 160))
+    gF_values += list(np.linspace(0.0005, 3.5, 160))
+    gF_values = list(sorted(set([round(x, 12) for x in gF_values])))
+    # for testing
+    gF_values = list(np.logspace(np.log10(0.05), np.log10(1), 41))
+    gF_values += list(np.linspace(0.06, 1.1, 40))
+    gF_values = list(sorted(set([round(x, 12) for x in gF_values])))
+    #gf_leng=len(gF_values)
+    #gfstart=int(gf_leng*gfstart)
+    #gfend=int(gf_leng*gfend)
+    #if gfstart<=0:
+    #    gfstart=0
+    #if gfend>=gf_leng:
+    #    gfend=gf_leng
+    #gF_values = gF_values[gfstart:gfend]
+    #print("gF", gF_values, len(gF_values))
     return gF_values
 
 
 def get_gHs():
-    gH_values = [data["gh"] for data in benchmarks.values()]
-    gH_values += list(np.arange(-2.0, 2.0 + 0.01, 0.01))
-    gH_values += list(np.arange(-8.0, 8.0 + 0.5, 0.5))
-    gH_values = list(sorted(set([round(x, 3) for x in gH_values])))
+#    gH_values = [abs(data["gh"]) for data in benchmarks.values()]
+#    gH_values += [-abs(data["gh"]) for data in benchmarks.values()]
+    gH_values = list(np.logspace(np.log10(0.001), np.log10(3.5), 160))
+    gH_values += list(-np.logspace(np.log10(0.001), np.log10(3.5), 160))
+    gH_values += list(np.linspace(0.001, 3.5, 160))
+    gH_values += list(-np.linspace(0.001, 3.5, 160))
+    gH_values = list(sorted(set([round(x, 12) for x in gH_values])))
+    #for testing
+    gH_values = list(np.linspace(0.15, 3.3, 56))
+    gH_values = list(sorted(set([round(x, 12) for x in gH_values])))
+    print("gH", gH_values, len(gH_values))
+    #exit()
     return gH_values
 
 
 benchmarks = {
     "modelA": {"ch": -0.556, "cq": -1.316, "gv": 1, "gh": -0.556, "gf": -0.562},
     "modelB": {"ch": -0.976, "cq": 1.024, "gv": 3, "gh": -2.928, "gf": 0.146},
-    "modelC": {"ch": 1, "cq": 0, "gv": 1, "gh": 1.0, "gf": 0.0},
+    "modelC1": {"ch": 1, "cq": 0, "gv": 1, "gh": 1.0, "gf": 0.0},
+    "modelC3": {"ch": 3, "cq": 0, "gv": 1, "gh": 3.0, "gf": 0.0},
 }
 
 decay_modes = {

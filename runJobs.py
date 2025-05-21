@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
-
+import numpy as np
 import os
 from utils import BRs_in_df, get_csv_file, decay_modes, get_masses, get_gVs, get_gFs, get_gHs
 from parallelize import parallelize
+import glob
 
 debug = True
 
-
-def runJobs(runLocal, ncores):
-    m_values = get_masses()
+def runJobs(runLocal, ncores, gfstart, gfend, m_values):
+    m_values = get_masses(m_values)
     gV_values = get_gVs()
-    gF_values = get_gFs()
+    gF_values = get_gFs(gfstart, gfend)
     gH_values = get_gHs()
+    m_values = m_values
     print("m_values", len(m_values))
     print("gV_values", len(gV_values))
     print("gF_values", len(gF_values))

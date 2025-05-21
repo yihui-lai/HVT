@@ -3,7 +3,7 @@
 import os
 import pandas as pd
 from utils import decay_modes, get_csv_file, store_df, get_masses, get_gVs, get_gFs, get_gHs
-
+import numpy as np
 
 def merge(files, output, overwrite):
     if os.path.exists(output) and not overwrite:
@@ -26,12 +26,11 @@ def run_merge(inputs, output, reference, overwrite):
             print("skipping", output, len(inputs), len(reference))
 
 
-def merge_df(overwrite):
-    m_values = get_masses()
+def merge_df(overwrite, gfstart, gfend, m_values):
+    m_values = get_masses(m_values)
     gV_values = get_gVs()
-    gF_values = get_gFs()
+    gF_values = get_gFs(gfstart, gfend)
     gH_values = get_gHs()
-
     for Vprime in decay_modes.keys():
         files_mass = []
         for mass in m_values:

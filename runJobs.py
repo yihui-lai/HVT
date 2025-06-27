@@ -7,16 +7,17 @@ import glob
 
 debug = True
 
-def runJobs(runLocal, ncores, gfstart, gfend, m_values):
+def runJobs(runLocal, ncores, gflist, m_values):
     m_values = get_masses(m_values)
     gV_values = get_gVs()
-    gF_values = get_gFs(gfstart, gfend)
+    gF_values = get_gFs(gflist)
     gH_values = get_gHs()
     m_values = m_values
-    print("m_values", len(m_values))
-    print("gV_values", len(gV_values))
-    print("gF_values", len(gF_values))
-    print("gH_values", len(gH_values))
+    print("---> runJobs ")
+    print("m_values", len(m_values), m_values)
+    print("gV_values", len(gV_values), gV_values)
+    print("gF_values", len(gF_values), gF_values)
+    print("gH_values", len(gH_values), gH_values)
     print("Max", len(decay_modes.keys()) * len(m_values) * len(gV_values) * len(gF_values) * len(gH_values))
     jobArgs = []
     tot = 0
@@ -43,7 +44,6 @@ def runJobs(runLocal, ncores, gfstart, gfend, m_values):
                         #     continue
                         runCommand = f"--Vprime {Vprime} --mass {mass} --gv {gv} --gf {gf} --gh {gh}"
                         jobArgs.append(runCommand)
-
     jobExec = f"{os.getcwd()}/createBRs.py"
     if runLocal:
         commands = [f"{jobExec} {args}" for args in jobArgs]

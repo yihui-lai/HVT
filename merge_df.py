@@ -26,10 +26,10 @@ def run_merge(inputs, output, reference, overwrite):
             print("skipping", output, len(inputs), len(reference))
 
 
-def merge_df(overwrite, gfstart, gfend, m_values):
+def merge_df(overwrite, gflist, m_values):
     m_values = get_masses(m_values)
     gV_values = get_gVs()
-    gF_values = get_gFs(gfstart, gfend)
+    gF_values = get_gFs(gflist)
     gH_values = get_gHs()
     for Vprime in decay_modes.keys():
         files_mass = []
